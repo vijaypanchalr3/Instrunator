@@ -19,6 +19,7 @@ classdef sr830 < handle
             address = append("GPIB0::",num2str(gpib_address),"::INSTR");
             try
                 obj.device = visadev(address);
+                obj.device.InputBufferSize = 256;
                 obj.device.Timeout = 10; % Timeout in seconds
                 disp("Connected to SR830.");
                 
@@ -148,12 +149,13 @@ classdef sr830 < handle
 
         function R = getR(obj)
             R = obj.queryNum('OUTP? 3');
+            % outR = str2double(R);
         end
 
         function P = getP(obj)
             P = obj.queryNum('OUTP? 4');
         end
-
+        
         function [X, Y, R, Theta] = readMeasurements(obj)
             X = obj.queryNum('OUTP? 1');
             Y = obj.queryNum('OUTP? 2');
@@ -167,6 +169,44 @@ classdef sr830 < handle
                 error("Invalid reference trigger mode. Use 0 (Sine Zero Crossing), 1 (TTL Rising), 2 (TTL Falling).");
             end
             obj.send(sprintf("RSLP %d", mode));
+        end
+        function setAux1(obj, voltage)
+            if voltage < -10.500 || voltage > 10.500
+                error("Voltage from AUX1 must be between -10.500 to 10.500");
+            end
+            % command = append('AUXV 1, ', num2str(voltage));
+            obj.send(sprintf('AUXV 1, %.4f', voltage));
+        end
+        function setAux2(obj, voltage)
+            if voltage < -10.500 || voltage > 10.500
+                error("Voltage from AUX2 must be between -10.500 to 10.500");
+            end
+            % command = append('AUXV 2, ', num2str(voltage));
+            obj.send(sprintf('AUXV 2, %.4f', voltage));
+        end
+        function setAux3(obj, voltage)
+            if voltage < -10.500 || voltage > 10.500
+                error("Voltage from AUX3 must be between -10.500 to 10.500");
+            end
+            % command = append('AUXV 3, ', num2str(voltage));
+            obj.send(sprintf('AUXV 3, %.4f', voltage));
+        end
+        function setAux4(obj, voltage)
+            if voltage < -10.500 || voltage > 10.500
+                error("Voltage from AUX4 must be between -10.500 to 10.500");
+            end
+            % command = append('AUXV 4, ', num2str(voltage));
+            obj.send(sprintf('AUXV 4, %.4f', voltage));
+        end
+        function disconnect(obj)
+            if ~isempty(obj.device) && isvalid(obj.device)
+                fclose(obj.device);
+                delete(obj.device);
+            end
+            obj.device = [];
+            % disp('sr830 connection closed;');
+            clear lockin;
+            fprintf('GPIB connection closed.\n');
         end
     end
 end

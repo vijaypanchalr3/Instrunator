@@ -28,24 +28,42 @@ classdef SR830Sampler < handle
         end
         
         %% Start Sampling & Plotting
-        function data = Aux1R(obj, startVoltage, rampRate, endVoltage)
+        function Aux1R(obj, startVoltage, rampRate, endVoltage)
             obj.isRunning = true;
+            fprintf("Starting sampling for %.2f seconds...\n", obj.duration);
 
             for voltage = startVoltage:rampRate:endVoltage
                 obj.lockin.setAux1(voltage);
                 % Wait for system to stabilize
                 pause(obj.settleTime);
                 % Read input voltage (magnitude of signal, "R" value)
-                R = obj.lockin.getR();
-                pause(obj.settleTime);
+                R = lockin1.getR();
+            
                 % Store data
                 obj.data.Aux1Voltage(end+1) = voltage;
-      
                 obj.data.InputVoltage(end+1) = R;
-                % obj.updatePlot(voltage, R);
-                fprintf('Aux1 Voltage: %.4f V | Measured Voltage: %.10f V\n', voltage, R);
+                obj.updatePlot(elapsedTime, X, Y, R, Theta);
+                % fprintf('Aux1 Voltage: %.4f V | Measured Voltage: %.6f V\n', voltage, inputVoltage);
             end
-            data = obj.data;
+            startTime = tic;  % Start timing
+            while obj.isRunning && toc(startTime) < obj.duration
+                % Record timestamp
+                elapsedTime = toc(startTime);
+                obj.data.time(end + 1) = elapsedTime;
+                
+                % Read data from SR830
+                [X, Y, R, Theta] = obj.lockin.readMeasurements();
+                obj.data.X(end + 1) = X;
+                obj.data.Y(end + 1) = Y;
+                obj.data.R(end + 1) = R;
+                obj.data.Theta(end + 1) = Theta;
+
+                % Update plot
+                obj.updatePlot(elapsedTime, X, Y, R, Theta);
+                
+                % Wait for next sample
+                pause(1 / obj.sampleRate);
+            end
             fprintf("Sampling complete.\n");
         end
         
@@ -62,20 +80,25 @@ classdef SR830Sampler < handle
             hold(obj.ax, 'on');
             
             % Create animated lines for real-time plotting
-            obj.lines.voltage = animatedline(obj.ax, 'Color', 'r', 'LineWidth', 1.5, 'DisplayName', 'X');
+            obj.lines.X = animatedline(obj.ax, 'Color', 'r', 'LineWidth', 1.5, 'DisplayName', 'X');
+            obj.lines.Y = animatedline(obj.ax, 'Color', 'b', 'LineWidth', 1.5, 'DisplayName', 'Y');
             obj.lines.R = animatedline(obj.ax, 'Color', 'g', 'LineWidth', 1.5, 'DisplayName', 'R');
-                       
-            xlabel(obj.ax, 'Aux (V)');
-            ylabel(obj.ax, 'R (V)');
-            title(obj.ax, 'SR830');
+            obj.lines.Theta = animatedline(obj.ax, 'Color', 'm', 'LineWidth', 1.5, 'DisplayName', 'Theta');
+            
+            xlabel(obj.ax, 'Time (s)');
+            ylabel(obj.ax, 'Signal (V or deg)');
+            title(obj.ax, 'SR830 Real-Time Measurement');
             legend(obj.ax, 'show');
             grid(obj.ax, 'on');
         end
 
         %% Update Live Plot
-        function updatePlot(obj, voltage, R)
-            addpoints(obj.lines.voltage, voltage);
-            addpoints(obj.lines.R,R);
+        function updatePlot(obj, t, X, Y, R, Theta)
+            addpoints(obj.lines.X, t, X);
+            addpoints(obj.lines.Y, t, Y);
+            addpoints(obj.lines.R, t, R);
+            addpoints(obj.lines.Theta, t, Theta);
+            
             drawnow;
         end
         
