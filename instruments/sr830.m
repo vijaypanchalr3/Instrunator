@@ -1,121 +1,172 @@
-% Tasks from vijay
-% TASK: need debugging once. 
-% TASK: control everything with VISADEV module !getting issues with it need
-% drivers again
-% TASK: class must contain trial for connection and we put only address
-% baudrate and stuff
-
-classdef SR830
-    properties
-        visaObj  % VISA object for communication
+classdef sr830 < handle
+    properties (Access = private)
+        device % visadev object
+    end
+    
+    properties (Constant)
+        % Allowed values for sensitivity, time constant, etc.
+        SENSITIVITY_VALUES = 0:26;  % Valid sensitivity levels (0-26)
+        TIME_CONSTANT_VALUES = 0:19; % Valid time constants (0-19)
+        FILTER_SLOPE_VALUES = [6, 12, 18, 24]; % dB/oct
     end
     
     methods
-        % Constructor
-        function obj = SR830(visaAddress)
-            % Create a VISA object with the given address
-            if nargin > 0
-                obj.visaObj = visa('AGILENT', visaAddress);
-                fopen(obj.visaObj);
-                disp(['Connected to SR830 at ', visaAddress]);
-            else
-                error('Visa address must be provided.');
+        %% Constructor: Initialize Connection
+        function obj = sr830(gpib_address)
+            if nargin < 1
+                gpib_address = 8; % Default GPIB address
+            end
+            address = append("GPIB0::",num2str(gpib_address),"::INSTR");
+            try
+                obj.device = visadev(address);
+                obj.device.Timeout = 10; % Timeout in seconds
+                disp("Connected to SR830.");
+                
+                % Verify connection
+                idn = obj.query('*IDN?');
+                fprintf("Device ID: %s\n", idn);
+                
+            catch ME
+                error("Failed to connect to SR830: %s", ME.message);
             end
         end
-        
-        function close(obj)
-            fclose(obj.visaObj);
-            delete(obj.visaObj);
-            clear obj;
-            disp('Connection closed and object deleted.');
+
+        %% Basic Communication
+        function send(obj, command)
+            writeline(obj.device, command);
         end
-        
-        % Query the device ID
-        function idn = queryID(obj)
-            fprintf(obj.visaObj, '*IDN?');
-            idn = fscanf(obj.visaObj);
-            disp(['Device ID: ', idn]);
+
+        function response = query(obj, command)
+            writeline(obj.device, command);
+            response = readline(obj.device);
         end
-        
-        % Set reference frequency (in Hz)
-        function setRefFrequency(obj, freq)
-            if freq >= 0.1 && freq <= 102000  % SR830 freq range: 0.1 Hz to 102 kHz
-                fprintf(obj.visaObj, ['FREQ ', num2str(freq)]);
-                disp(['Reference frequency set to ', num2str(freq), ' Hz']);
-            else
-                warning('Reference frequency must be between 0.1 Hz and 102 kHz.');
+
+        function value = queryNum(obj, command)
+            response = obj.query(command);
+            value = str2double(response);
+        end
+
+        %% System and Status Commands
+        function reset(obj)
+            obj.send('*RST'); % Reset device
+        end
+
+        function clearStatus(obj)
+            obj.send('*CLS'); % Clear status registers
+        end
+
+        function status = readStatus(obj)
+            status = obj.queryNum('*STB?'); % Read status byte
+        end
+
+        function lockinID = getID(obj)
+            lockinID = obj.query('*IDN?'); % Get device ID
+        end
+
+        %% Measurement Settings
+        function setReferenceSource(obj, source)
+            % source: 0 = Internal, 1 = External
+            if ~ismember(source, [0, 1])
+                error("Invalid reference source. Use 0 (Internal) or 1 (External).");
             end
+            obj.send(sprintf('FMOD %d', source));
         end
-        
-        % Get reference frequency (in Hz)
-        function freq = getRefFrequency(obj)
-            fprintf(obj.visaObj, 'FREQ?');
-            freq = fscanf(obj.visaObj);
-            disp(['Reference frequency: ', freq, ' Hz']);
+
+        function setFrequency(obj, freq)
+            if freq < 0.001 || freq > 102000
+                error("Frequency must be in range 0.001 Hz to 102 kHz.");
+            end
+            obj.send(sprintf("FREQ %f", freq));
         end
-        
-        % Set input signal amplitude
+
+        function setPhase(obj, phase)
+            if phase < -360 || phase > 360
+                error("Phase must be in range -360° to 360°.");
+            end
+            obj.send(sprintf("PHAS %f", phase));
+        end
+
         function setAmplitude(obj, amplitude)
-            if amplitude >= 0 && amplitude <= 10  % SR830 input signal range: 0-10 V
-                fprintf(obj.visaObj, ['AMPT ', num2str(amplitude)]);
-                disp(['Signal amplitude set to ', num2str(amplitude), ' V']);
-            else
-                warning('Amplitude must be between 0 and 10 V.');
+            if amplitude < 0.004 || amplitude > 5
+                error("Amplitude must be in range 0.004 V to 5 V.");
             end
+            obj.send(sprintf("SLVL %f", amplitude));
         end
-        
-        % Get input signal amplitude
-        function amplitude = getAmplitude(obj)
-            fprintf(obj.visaObj, 'AMPT?');
-            amplitude = fscanf(obj.visaObj);
-            disp(['Signal amplitude: ', amplitude, ' V']);
+
+        function setSensitivity(obj, level)
+            if ~ismember(level, obj.SENSITIVITY_VALUES)
+                error("Invalid sensitivity level. Use values 0-26.");
+            end
+            obj.send(sprintf("SENS %d", level));
         end
-        
-        % Get the X output (real part)
-        function X = getX(obj)
-            fprintf(obj.visaObj, 'OUTX?');
-            X = fscanf(obj.visaObj);
-            disp(['X output: ', X]);
-        end
-        
-        % Get the Y output (imaginary part)
-        function Y = getY(obj)
-            fprintf(obj.visaObj, 'OUTY?');
-            Y = fscanf(obj.visaObj);
-            disp(['Y output: ', Y]);
-        end
-        
-        % Get the magnitude (R) output
-        function R = getMagnitude(obj)
-            fprintf(obj.visaObj, 'OUTR?');
-            R = fscanf(obj.visaObj);
-            disp(['Magnitude (R): ', R]);
-        end
-        
-        % Get the phase (Theta) output
-        function Theta = getPhase(obj)
-            fprintf(obj.visaObj, 'OUTP?');
-            Theta = fscanf(obj.visaObj);
-            disp(['Phase (Theta): ', Theta]);
-        end
-        
-        % Get the time constant
-        function tau = getTimeConstant(obj)
-            fprintf(obj.visaObj, 'TC?');
-            tau = fscanf(obj.visaObj);
-            disp(['Time constant: ', tau, ' s']);
-        end
-        
-        % Set time constant (in seconds)
+
         function setTimeConstant(obj, timeConst)
-            validTimeConsts = [1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 0.1, 0.3, 1, 3, 10, 30];
-            if ismember(timeConst, validTimeConsts)
-                fprintf(obj.visaObj, ['TC ', num2str(timeConst)]);
-                disp(['Time constant set to ', num2str(timeConst), ' s']);
-            else
-                warning('Invalid time constant. Choose from valid values.');
+            if ~ismember(timeConst, obj.TIME_CONSTANT_VALUES)
+                error("Invalid time constant. Use values 0-19.");
             end
+            obj.send(sprintf("OFLT %d", timeConst));
         end
-        
+
+        function setLowPassFilter(obj, slope)
+            if ~ismember(slope, obj.FILTER_SLOPE_VALUES)
+                error("Invalid low-pass filter slope. Use values: 6, 12, 18, 24 dB/oct.");
+            end
+            obj.send(sprintf("OFSL %d", find(obj.FILTER_SLOPE_VALUES == slope) - 1));
+        end
+
+        function setSyncFilter(obj, enabled)
+            if ~ismember(enabled, [0, 1])
+                error("Invalid sync filter setting. Use 0 (Off) or 1 (On).");
+            end
+            obj.send(sprintf("SYNC %d", enabled));
+        end
+
+        function setReserveMode(obj, mode)
+            if ~ismember(mode, [0, 1, 2])
+                error("Invalid reserve mode. Use 0 (High Reserve), 1 (Normal), 2 (Low Noise).");
+            end
+            obj.send(sprintf("RMOD %d", mode));
+        end
+
+        %% Output and Display Settings
+        function setOutputDisplay(obj, ch1, ch2)
+            % ch1, ch2: 0=X, 1=Y, 2=R, 3=θ
+            if ~ismember(ch1, 0:3) || ~ismember(ch2, 0:3)
+                error("Invalid display channel. Use 0 (X), 1 (Y), 2 (R), 3 (θ).");
+            end
+            obj.send(sprintf("DDEF 1, %d, 0", ch1));
+            obj.send(sprintf("DDEF 2, %d, 0", ch2));
+        end
+
+        function X = getX(obj)
+            X = obj.queryNum('OUTP? 1');
+        end
+
+        function Y = getY(obj)
+            Y = obj.queryNum('OUTP? 2');
+        end
+
+        function R = getR(obj)
+            R = obj.queryNum('OUTP? 3');
+        end
+
+        function P = getP(obj)
+            P = obj.queryNum('OUTP? 4');
+        end
+
+        function [X, Y, R, Theta] = readMeasurements(obj)
+            X = obj.queryNum('OUTP? 1');
+            Y = obj.queryNum('OUTP? 2');
+            R = obj.queryNum('OUTP? 3');
+            Theta = obj.queryNum('OUTP? 4');
+        end
+
+        %% Reference Settings
+        function setReferenceTrigger(obj, mode)
+            if ~ismember(mode, [0, 1, 2])
+                error("Invalid reference trigger mode. Use 0 (Sine Zero Crossing), 1 (TTL Rising), 2 (TTL Falling).");
+            end
+            obj.send(sprintf("RSLP %d", mode));
+        end
     end
 end
