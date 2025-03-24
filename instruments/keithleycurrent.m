@@ -5,7 +5,7 @@ classdef keithleycurrent < handle
         maxCurrent % Max allowed current (safety)
     end
     
-    methods
+    methodskeithley
         % Constructor: Connect to instrument
         function obj = keithleycurrent(gpib_address, maxVoltage, maxCurrent)
             if nargin < 1
