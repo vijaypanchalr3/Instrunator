@@ -20,8 +20,10 @@ classdef SR830Sampler < handle
             obj.isRunning = false;
 
             % Initialize data storage
-            obj.data.Aux1Voltage = [];
-            obj.data.InputVoltage = [];
+            obj.data.Aux1 = [];
+            obj.data.Aux2 = [];
+            obj.data.X = [];
+            obj.data.Y = [];
 
             % Setup plotting
             obj.initPlot();
@@ -30,9 +32,8 @@ classdef SR830Sampler < handle
         %% Start Sampling & Plotting
         function data = Aux1R(obj, startVoltage, rampRate, endVoltage)
             obj.isRunning = true;
-
             for voltage = startVoltage:rampRate:endVoltage
-                obj.lockin.setAux1(voltage);
+                obj.lockin.Aux1(voltage);
                 % Wait for system to stabilize
                 pause(obj.settleTime);
                 % Read input voltage (magnitude of signal, "R" value)
@@ -42,11 +43,56 @@ classdef SR830Sampler < handle
                 obj.data.Aux1Voltage(end+1) = voltage;
       
                 obj.data.InputVoltage(end+1) = R;
-                % obj.updatePlot(voltage, R);
+                obj.updatePlot(voltage, R);
                 fprintf('Aux1 Voltage: %.4f V | Measured Voltage: %.10f V\n', voltage, R);
             end
             data = obj.data;
             fprintf("Sampling complete.\n");
+        end
+
+        function data = voltage_sweep(obj, Voltage1, Voltage2)
+            obj.isRunning = true;
+            if nargin < 2
+                obj.initPlot();
+                for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
+                    obj.lockin.setAux1(v1);
+
+                    pause(obj.settleTime);
+                    
+                    X = obj.lockin.getX();
+                    Y = obj.lockin.getY();
+
+                    obj.data.Aux1(end+1) = voltage;
+                    obj.data.X(end+1) = X;
+                    obj.data.Y(end+1) = Y;
+                    % obj.updatePlot_1d(voltage, X, Y);
+                    fprintf('Aux1: %.4f V | X: %.10f V\n | Y: %.10f V\n', voltage, X, Y);
+                end
+                data = obj.data;
+                fprintf("Sampling complete.\n");
+            else
+                obj.initPlot();
+                for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
+                    obj.lockin.setAux1(v1);
+                    for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
+                        obj.lockin.setAux2(v2);
+                        
+                        pause(obj.settleTime);
+                        
+                        X = obj.lockin.getX();
+                        Y = obj.lockin.getY();
+
+                        obj.data.Aux2(end+1) = v2;
+                        obj.data.X(end+1) = X;
+                        obj.data.Y(end+1) = Y;
+                        fprintf('Aux1: %.4f V | Aux2: %.4f V | X: %.10f V\n | Y: %.10f V\n', v1, v2, X, Y);
+                    end
+                    obj.data.Aux1(end+1) = v1;
+
+                end
+                data = obj.data;
+                fprintf("Sampling complete.\n");
+            end  
         end
         
         %% Stop Sampling
@@ -56,6 +102,12 @@ classdef SR830Sampler < handle
         end
         
         %% Initialize Live Plot
+        function init_2Dplot(obj)
+            obj.fig = figure('Name', 'SR830 Data Logger', 'NumberTitle', 'off');
+            obj.ax = axes(obj.fig);
+            hold(obj.ax, 'on');
+
+        end
         function initPlot(obj)
             obj.fig = figure('Name', 'SR830 Data Logger', 'NumberTitle', 'off');
             obj.ax = axes(obj.fig);
@@ -74,8 +126,8 @@ classdef SR830Sampler < handle
 
         %% Update Live Plot
         function updatePlot(obj, voltage, R)
-            addpoints(obj.lines.voltage, voltage);
-            addpoints(obj.lines.R,R);
+            addpoints(obj.lines.voltage, voltage, R);
+            % addpoints(obj.lines.R,R);
             drawnow;
         end
         

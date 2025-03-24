@@ -4,7 +4,7 @@ classdef measurement < handle
     end
 
     methods
-        function obj = measurement(obj)
+        function obj = measurement(
             
         end
     end
