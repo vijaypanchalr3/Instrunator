@@ -78,9 +78,8 @@ classdef SR830Sampler < handle
                 [mV1, mV2] = meshgrid(meshV1, meshV2);
 
                 obj.init2DPlot(mV1);
-                %CONFUSED HERE: HOW TO GET OVER WITH THIS MESHING AND DIRECTLY USING IT THERE.
-                i = 1;
-                j = 1;
+                totalPoints = numel(mV1);
+                %CONFUSED HERE: HOW TO GET OVER WITH THIS MESHING AND DIRECTLY USING IT THERE. 
                 for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
                     obj.lockin.setAux1(v1);
                     for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
@@ -94,14 +93,14 @@ classdef SR830Sampler < handle
                         obj.data.Aux2(end+1) = v2;
                         obj.data.X(end+1) = X;
                         obj.data.Y(end+1) = Y;
+                        obj.Z.
                         
-                        obj.Z(i,j) = sqrt(X^2+Y^2)
-                        j = j+1;
+                        
                         fprintf('Aux1: %.4f V | Aux2: %.4f V | X: %.10f V\n | Y: %.10f V\n', v1, v2, X, Y);
                     end
                     obj.data.Aux1(end+1) = v1;
-                    obj.contourPlot = contourf(V, T, obj.Z, 20, 'LineColor', 'none');
-                    i=i+1;
+                    [row, col] = ind2sub(size(V), idx);
+
                 end
                 data = obj.data;
                 fprintf("Sampling complete.\n");

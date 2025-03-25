@@ -29,12 +29,13 @@ contourPlot = [];
 totalPoints = numel(V);
 
 % We'll update the grid sequentially (row-wise order)
-for idx = 1:n
+for idx = 1:totalPoints
     % Determine the row and column indices for the current measurement
     [row, col] = ind2sub(size(V), idx);
-    for i = 1:n
-        Z(row, i) = rand();
-    end
+    
+    % Update the measurement matrix with the new data point
+    Z(row, col) = rand();
+    
     % Only update the contour if at least a few points have been measured
     if sum(~isnan(Z(:))) >= 4
         % If an existing contour plot exists and is valid, delete it
