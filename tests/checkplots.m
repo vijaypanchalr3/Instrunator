@@ -14,7 +14,7 @@ settleTime = 0.2;      % Wait time between steps (s)
 % lockin1 = sr830(8);
 
 sampler = toySR830Sampler(NaN(0), settleTime);
-data = sampler.voltage_sweep([-1,1,0.2], [-1,1,0.2]);
+data = sampler.voltage_sweep([-1,1,0.02], [-1,1,0.02]);
 
 % lockin1.disconnect();
 

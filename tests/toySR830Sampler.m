@@ -78,16 +78,17 @@ classdef toySR830Sampler < handle
                 meshV2 = linspace(Voltage2(1), Voltage2(2), Voltage2(3));
                 [mV1, mV2] = meshgrid(meshV1, meshV2);
 
-                obj.init2Dplot(mV1, mV2)
+                obj.init2Dplot()
                 %CONFUSED HERE: HOW TO GET OVER WITH THIS MESHING AND DIRECTLY USING IT THERE.
                 i = 1;
                 j = 1;
+                obj.Z = nan(length(meshV1), length(meshV2));
                 for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
                     % obj.lockin.setAux1(v1);
                     for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
                         % obj.lockin.setAux2(v2);
                         
-                        pause(obj.settleTime);
+                        % pause(obj.settleTime);
                         
                         X = rand();
                         Y = rand();
@@ -96,28 +97,27 @@ classdef toySR830Sampler < handle
                         obj.data.X(end+1) = X;
                         obj.data.Y(end+1) = Y;
                         
-                        obj.Z(i,j) = sqrt(X^2+Y^2);
+                        obj.Z(j,i) = sqrt(X^2+Y^2);
                         j = j+1;
                         % fprintf('Aux1: %.4f V | Aux2: %.4f V | X: %.10f V\n | Y: %.10f V\n', v1, v2, X, Y);
                     end
                     disp(obj.Z);
-     
+                    i = i+1;
+                    j = 1;
                     obj.data.Aux1(end+1) = v1;
-                    i=i+1;
-
+                    
                     % This is for plotting don't bother
-                    if sum(~isnan(obj.Z(:))) >= 4 && i>1
+                    if sum(~isnan(obj.Z(:))) >= 4 && i>2
                         % If an existing contour plot exists and is valid, delete it
                         if ~isempty(obj.contourPlot)
                             if all(isgraphics(obj.contourPlot(:)))
                                 delete(obj.contourPlot);
                             end
                         end
-        
-        
+                        disp("yead=hhh")
                         obj.contourPlot = contourf(mV1, mV2, obj.Z, 20, 'LineColor', 'none');
-                     
                     end
+                    
 
                     
                 end
@@ -133,14 +133,12 @@ classdef toySR830Sampler < handle
         end
         
         %% Initialize Live Plot
-        function init2Dplot(obj, axis1, axis2)
+        function init2Dplot(obj)
             obj.fig = figure('Name', 'SR830 Data Logger', 'NumberTitle', 'off');
             obj.ax = axes(obj.fig);
             hold(obj.ax, 'on');
             colormap parula;
             colorbar;
-
-            obj.Z = nan(length(axis1), length(axis2));
             
             obj.contourPlot = [];
             xlabel(obj.ax, 'Aux1 (V)');
