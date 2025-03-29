@@ -4,6 +4,7 @@ classdef SR830Sampler < handle
         settleTime
         data           % Data storage (struct)
         isRunning      % Control flag for stopping
+        finaldata
     end
     
     properties (Access = private)
@@ -23,7 +24,7 @@ classdef SR830Sampler < handle
 
             % Initialize data storage
             obj.data.Aux1 = [];
-            obj.data.Aux2 = [];
+            % obj.data.Aux2 = [];
             obj.data.X = [];
             obj.data.Y = [];
 
@@ -120,6 +121,9 @@ classdef SR830Sampler < handle
             j = 1;
             for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
                 keithley.setVoltage(v1);
+                pause(0.1)
+                out = keithley.readAll();
+                fprintf("%e", out);
                 for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
                     obj.lockin.setAux2(v2);
                     
@@ -134,13 +138,74 @@ classdef SR830Sampler < handle
                     
                     obj.Z(i,j) = sqrt(X^2+Y^2);
                     j = j+1;
-                    fprintf('Aux1: %.4f V | Aux2: %.4f V | X: %.10f V\n | Y: %.10f V\n', v1, v2, X, Y);
+                    fprintf('Aux1: %.4f V | Aux2: %.4f V | X: %.10f V | Y: %.10f V\n', v1, v2, X, Y);
                 end
                 obj.data.Aux1(end+1) = v1;
                 obj.contourPlot = contourf(V, T, obj.Z, 20, 'LineColor', 'none');
                 i=i+1;
             end
             data = obj.data;
+            fprintf("Sampling complete.\n");
+        end
+
+        function data = startovernegstart(obj, keithley, Voltage, filename)
+            obj.isRunning = true;
+                       
+            for v1 = Voltage(1):Voltage(3):Voltage(2)
+                keithley.setVoltage(v1);
+                pause(0.1)
+                out = keithley.readAll();
+                fprintf("%e\t", out);
+                pause(obj.settleTime);
+
+                X = obj.lockin.getX();
+                Y = obj.lockin.getY();
+
+                obj.data.Aux1(end+1) = v1;
+                obj.data.X(end+1) = X;
+                obj.data.Y(end+1) = Y;
+                
+                fprintf('\nAux1: %.4f V X: %.10f V | Y: %.10f V\n', v1, X, Y);
+            end
+            for v1 = Voltage(2):-Voltage(3):-Voltage(2)
+                keithley.setVoltage(v1);
+                pause(0.1)
+                out = keithley.readAll();
+                fprintf("%e\t", out);
+                pause(obj.settleTime);
+
+                X = obj.lockin.getX();
+                Y = obj.lockin.getY();
+
+                obj.data.Aux1(end+1) = v1;
+                obj.data.X(end+1) = X;
+                obj.data.Y(end+1) = Y;
+                
+                fprintf('\nAux1: %.4f V X: %.10f V | Y: %.10f V\n', v1, X, Y);
+                
+            end
+            for v1 = -Voltage(2):Voltage(3):Voltage(1)
+                keithley.setVoltage(v1);
+                pause(0.1)
+                out = keithley.readAll();
+                fprintf("%e\t", out);
+                pause(obj.settleTime);
+
+                X = obj.lockin.getX();
+                Y = obj.lockin.getY();
+
+                obj.data.Aux1(end+1) = v1;
+                obj.data.X(end+1) = X;
+                obj.data.Y(end+1) = Y;
+                
+                fprintf('\nAux1: %.4f V X: %.10f V | Y: %.10f V\n', v1, X, Y);
+                
+            end
+            % data = obj.data;
+            obj.finaldata = cell2mat(struct2cell(obj.data));
+            obj.finaldata = transpose(obj.finaldata);
+            data = obj.finaldata;
+            obj.savefile(filename, data);
             fprintf("Sampling complete.\n");
         end
 
@@ -200,46 +265,28 @@ classdef SR830Sampler < handle
         end
 
         %% Save file
-        function save(obj, filename)
+        function savefile(obj, filename, data)
             count = 1;
-
             % Check if the file exists and modify the filename
-            while exist(filename, 'file')
-                filename2 =  sprintf('%d.asc', count);
-                filename = append(filename, filename2);
+            while isfile(filename)
+                newfilename = split(filename,".");
+                newfilename = newfilename(1);
+                extend =  sprintf('%d.asc', count);
+                filename = append(newfilename, extend);
+                filename = strjoin(filename);
                 count = count + 1;
             end
             % Check if obj has the data field
-            if ~isfield(obj, 'data')
-                error('The input object does not contain a "data" field.');
-            end
-            
-            % Open the file for writing
+            % if ~isfield(obj, 'finaldata')
+            %     error('The input object does not contain a "data" field.');
+            % end
 
-            
-            fid = fopen(filename, 'w');
-            if fid == -1
-                error('Could not open file for writing.');
-            end
-            
-            % Get data and size
-            data = obj.data;
-            
             % Check if data is a numeric matrix
-            if ~isnumeric(data)
+            if ~isnumeric(obj.finaldata)
                 error('obj.data must be a numeric matrix.');
             end
-            
-            % Write data to file with proper formatting
-            [rows, cols] = size(data);
-            for i = 1:rows
-                fprintf(fid, '%g\t', data(i, 1:end-1)); % Print all but last column with tab separator
-                fprintf(fid, '%g\n', data(i, end)); % Print last column followed by newline
-            end
-            
-            % Close the file
-            fclose(fid);
-            
+            matlabsucks = data;
+            save(filename, 'matlabsucks', '-ascii')
             fprintf('Data successfully saved to %s\n', filename);
         
         end
