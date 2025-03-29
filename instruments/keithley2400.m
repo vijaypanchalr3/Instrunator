@@ -1,11 +1,11 @@
-classdef Keithley2400 < handle
+classdef keithley2400 < handle
     properties (Access = private)
         device % visadev object
     end
     
     methods
         %% Constructor: Initialize Connection
-        function obj = Keithley2400(gpib_address)
+        function obj = keithley2400(gpib_address)
             if nargin < 1
                 gpib_address = 24; % Default GPIB address
             end
@@ -41,6 +41,7 @@ classdef Keithley2400 < handle
 
         %% Output Control
         function enableOutput(obj)
+<<<<<<< HEAD
             obj.send(':OUTP ON');
         end
 
@@ -74,6 +75,22 @@ classdef Keithley2400 < handle
 
         function out = getCurrent(obj)
             out = obj.query(':MEAS:VOLT?');
+=======
+            obj.send(':OUTP:ENAB:STAT ON');
+        end
+
+        function disableOutput(obj)
+            obj.send(':OUTP:ENAB:STAT OFF');
+        end
+
+        function status = getOutputStatus(obj)
+            status = obj.queryNum(':OUTP?');
+        end
+
+        %% get output
+        function out = getOutput(obj)
+            out = obj.queryNum(':READ?');
+>>>>>>> 01b172065b92d9e31f5014adb2f6133f0e356dcd
         end
 
         %% Voltage & Current Control
