@@ -107,6 +107,44 @@ classdef SR830Sampler < handle
                 fprintf("Sampling complete.\n");
             end  
         end
+
+        function data = test_voltage_sweep(obj, keithley, Voltage1, Voltage2)
+            obj.isRunning = true;
+            meshV1 = linspace(Voltage1(1), Voltage1(2), Voltage1(3));
+            meshV2 = linspace(Voltage2(1), Voltage2(2), Voltage2(3));
+            [mV1, mV2] = meshgrid(meshV1, meshV2);
+
+            % obj.init2DPlot(mV1);
+            %CONFUSED HERE: HOW TO GET OVER WITH THIS MESHING AND DIRECTLY USING IT THERE.
+            i = 1;
+            j = 1;
+            for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
+                keithley.setVoltage(v1);
+                for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
+                    obj.lockin.setAux2(v2);
+                    
+                    pause(obj.settleTime);
+                    
+                    X = obj.lockin.getX();
+                    Y = obj.lockin.getY();
+
+                    obj.data.Aux2(end+1) = v2;
+                    obj.data.X(end+1) = X;
+                    obj.data.Y(end+1) = Y;
+                    
+                    obj.Z(i,j) = sqrt(X^2+Y^2);
+                    j = j+1;
+                    fprintf('Aux1: %.4f V | Aux2: %.4f V | X: %.10f V\n | Y: %.10f V\n', v1, v2, X, Y);
+                end
+                obj.data.Aux1(end+1) = v1;
+                obj.contourPlot = contourf(V, T, obj.Z, 20, 'LineColor', 'none');
+                i=i+1;
+            end
+            data = obj.data;
+            fprintf("Sampling complete.\n");
+        end
+
+
         
         %% Stop Sampling
         function stop(obj)
@@ -158,6 +196,17 @@ classdef SR830Sampler < handle
             obj.stop();
             if isvalid(obj.fig)
                 close(obj.fig);
+            end
+        end
+
+        %% Save file
+        function save(obj, filename, data)
+            count = 1;
+
+            % Check if the file exists and modify the filename
+            while exist(filename, 'file')
+                filename = sprintf('mydata_%d.csv', count);
+                count = count + 1;
             end
         end
     end

@@ -41,29 +41,50 @@ classdef Keithley2400 < handle
 
         %% Output Control
         function enableOutput(obj)
-            obj.send('OUTP ON');
+            obj.send(':OUTP ON');
         end
 
         function disableOutput(obj)
-            obj.send('OUTP OFF');
+            obj.send(':OUTP OFF');
+        end
+        
+        function modeCurrent(obj)
+            obj.send(':SENS:FUNC "CURR"');
+        end
+
+        function modeFixedVoltage(obj)
+            obj.send(':SOUR:VOLT:MODE FIXED');
+        end
+
+        function modeVoltage(obj)
+            obj.send(':SOUR:FUNC VOLT');
+        end
+
+
+        %% Output
+        function out = readAll(obj)
+            str = obj.query(':READ?');
+            splitstr = strsplit(str, ',');
+            out = str2double(splitstr);
+        end
+
+        function out = getVoltage(obj)
+            out = obj.query(':MEAS:CURR?');
+        end
+
+        function out = getCurrent(obj)
+            out = obj.query(':MEAS:VOLT?');
         end
 
         %% Voltage & Current Control
         function setVoltage(obj, voltage)
-            obj.send(sprintf('SOUR:VOLT %f', voltage));
+            obj.send(sprintf(':SOUR:VOLT %f', voltage));
         end
 
         function setCurrent(obj, current)
-            obj.send(sprintf('SOUR:CURR %f', current));
+            obj.send(sprintf(':SOUR:CURR %f', current));
         end
 
-        function voltage = getVoltage(obj)
-            voltage = obj.queryNum('MEAS:VOLT?');
-        end
-
-        function current = getCurrent(obj)
-            current = obj.queryNum('MEAS:CURR?');
-        end
 
         %% Compliance Limits
         function setVoltageCompliance(obj, voltageLimit)
