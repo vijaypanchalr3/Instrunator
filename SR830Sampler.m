@@ -107,12 +107,60 @@ classdef SR830Sampler < handle
                 fprintf("Sampling complete.\n");
             end  
         end
+        function data = startovernegstart(obj, keithley, Voltage)
+            obj.isRunning = true;
+           
+            obj.initPlot();
+            for v1 = Voltage(1):Voltage(3):Voltage(2)
+                keithley.setVoltage(v1);
 
+                pause(obj.settleTime);
+                
+                X = obj.lockin.getX();
+                Y = obj.lockin.getY();
+
+                obj.data.Aux1(end+1) = voltage;
+                obj.data.X(end+1) = X;
+                obj.data.Y(end+1) = Y;
+                % obj.updatePlot_1d(voltage, X, Y);
+                fprintf('Aux1: %.4f V | X: %.10f V\n | Y: %.10f V\n', voltage, X, Y);
+            end
+            for v1 = Voltage(2):-Voltage(3):-Voltage(2)
+                keithley.setVoltage(v1);
+
+                pause(obj.settleTime);
+                
+                X = obj.lockin.getX();
+                Y = obj.lockin.getY();
+
+                obj.data.Aux1(end+1) = voltage;
+                obj.data.X(end+1) = X;
+                obj.data.Y(end+1) = Y;
+                % obj.updatePlot_1d(voltage, X, Y);
+                fprintf('Aux1: %.4f V | X: %.10f V\n | Y: %.10f V\n', voltage, X, Y);
+            end
+            for v1 = -Voltage(2):Voltage(3):Voltage(1)
+                keithley.setVoltage(v1);
+
+                pause(obj.settleTime);
+                
+                X = obj.lockin.getX();
+                Y = obj.lockin.getY();
+
+                obj.data.Aux1(end+1) = voltage;
+                obj.data.X(end+1) = X;
+                obj.data.Y(end+1) = Y;
+                % obj.updatePlot_1d(voltage, X, Y);
+                fprintf('Aux1: %.4f V | X: %.10f V\n | Y: %.10f V\n', voltage, X, Y);
+            end
+            data = obj.data;
+            fprintf("Sampling complete.\n");
+        end
         function data = test_voltage_sweep(obj, keithley, Voltage1, Voltage2)
             obj.isRunning = true;
-            meshV1 = linspace(Voltage1(1), Voltage1(2), Voltage1(3));
-            meshV2 = linspace(Voltage2(1), Voltage2(2), Voltage2(3));
-            [mV1, mV2] = meshgrid(meshV1, meshV2);
+            % meshV1 = linspace(Voltage1(1), Voltage1(2), Voltage1(3));
+            % meshV2 = linspace(Voltage2(1), Voltage2(2), Voltage2(3));
+            % [mV1, mV2] = meshgrid(meshV1, meshV2);
 
             % obj.init2DPlot(mV1);
             %CONFUSED HERE: HOW TO GET OVER WITH THIS MESHING AND DIRECTLY USING IT THERE.
@@ -120,6 +168,9 @@ classdef SR830Sampler < handle
             j = 1;
             for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
                 keithley.setVoltage(v1);
+                pause(obj.settleTime);
+                out = keithley.readAll();
+                fprintf('%e',out);
                 for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
                     obj.lockin.setAux2(v2);
                     
@@ -137,10 +188,11 @@ classdef SR830Sampler < handle
                     fprintf('Aux1: %.4f V | Aux2: %.4f V | X: %.10f V\n | Y: %.10f V\n', v1, v2, X, Y);
                 end
                 obj.data.Aux1(end+1) = v1;
-                obj.contourPlot = contourf(V, T, obj.Z, 20, 'LineColor', 'none');
+                % obj.contourPlot = contourf(V, T, obj.Z, 20, 'LineColor', 'none');
                 i=i+1;
             end
             data = obj.data;
+            obj.save('Z:\\data\\vijay\\test.mat');
             fprintf("Sampling complete.\n");
         end
 
@@ -200,7 +252,7 @@ classdef SR830Sampler < handle
         end
 
         %% Save file
-        function save(obj, filename, data)
+        function save(obj, filename)
             count = 1;
 
             % Check if the file exists and modify the filename
@@ -208,6 +260,7 @@ classdef SR830Sampler < handle
                 filename = sprintf('mydata_%d.csv', count);
                 count = count + 1;
             end
+            save(filename, obj.data)
         end
     end
 end

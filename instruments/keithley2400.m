@@ -41,7 +41,6 @@ classdef keithley2400 < handle
 
         %% Output Control
         function enableOutput(obj)
-<<<<<<< HEAD
             obj.send(':OUTP ON');
         end
 
@@ -75,13 +74,12 @@ classdef keithley2400 < handle
 
         function out = getCurrent(obj)
             out = obj.query(':MEAS:VOLT?');
-=======
             obj.send(':OUTP:ENAB:STAT ON');
         end
 
-        function disableOutput(obj)
-            obj.send(':OUTP:ENAB:STAT OFF');
-        end
+        % function disableOutput(obj)
+        %     obj.send(':OUTP:ENAB:STAT OFF');
+        % end
 
         function status = getOutputStatus(obj)
             status = obj.queryNum(':OUTP?');
@@ -90,7 +88,6 @@ classdef keithley2400 < handle
         %% get output
         function out = getOutput(obj)
             out = obj.queryNum(':READ?');
->>>>>>> 01b172065b92d9e31f5014adb2f6133f0e356dcd
         end
 
         %% Voltage & Current Control
@@ -110,6 +107,14 @@ classdef keithley2400 < handle
 
         function setCurrentCompliance(obj, currentLimit)
             obj.send(sprintf('SENS:CURR:PROT %f', currentLimit));
+        end
+
+        function out = getCurrentCompliance(obj)
+            out = obj.query('SENS:CURR:PROT?');
+        end
+        
+        function out = getVoltageCompliance(obj)
+            out = obj.query('SENS:VOLT:PROT?');
         end
 
         %% Disconnect Handling
