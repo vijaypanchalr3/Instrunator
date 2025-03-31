@@ -170,7 +170,7 @@ classdef sr830 < handle
             end
             obj.send(sprintf("RSLP %d", mode));
         end
-        function setAux1(obj, voltage)
+        function setVoltage(obj, voltage)
             if voltage < -10.500 || voltage > 10.500
                 error("Voltage from AUX1 must be between -10.500 to 10.500");
             end
