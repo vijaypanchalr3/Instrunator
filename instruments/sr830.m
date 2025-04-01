@@ -129,7 +129,7 @@ classdef sr830 < handle
             obj.send(sprintf("RMOD %d", mode));
         end
 
-        %% Output and Display Settings
+        %% Display Output
         function setOutputDisplay(obj, ch1, ch2)
             % ch1, ch2: 0=X, 1=Y, 2=R, 3=θ
             if ~ismember(ch1, 0:3) || ~ismember(ch2, 0:3)
@@ -138,7 +138,8 @@ classdef sr830 < handle
             obj.send(sprintf("DDEF 1, %d, 0", ch1));
             obj.send(sprintf("DDEF 2, %d, 0", ch2));
         end
-
+        
+        %% Output
         function X = getX(obj)
             X = obj.queryNum('OUTP? 1');
         end
@@ -176,6 +177,8 @@ classdef sr830 < handle
             end
             obj.send(sprintf("RSLP %d", mode));
         end
+
+        %% AUX
         function setVoltage(obj, voltage)
             if voltage < -10.500 || voltage > 10.500
                 error("Voltage from AUX1 must be between -10.500 to 10.500");
@@ -207,12 +210,36 @@ classdef sr830 < handle
             % command = append('AUXV 4, ', num2str(voltage));
             obj.send(sprintf('AUXV 4, %.4f', voltage));
         end
-        function getFlags(obj)
-            % Get the status of the flags
-            flags = obj.query('*CLS');
-            % Display the flags
-            fprintf('Flags: %s\n', flags);
+
+        %% Flags
+        function flags = getLIAflags(obj)
+            flags = obj.queryNum('LIAS?');
+            flags = reverse(dec2bin(flags, 8))=='1';
         end
+        function flag = getInputOverloadFlag(obj)
+            flag = obj.queryNum('LIAS?0');
+        end
+        function flag = getTCOverloadFlag(obj)
+            flag = obj.queryNum('LIAS?1');
+        end
+        function flag = getOutputOverloadFlag(obj)
+            flag = obj.queryNum('LIAS?2');
+        end
+        function flag = getRefUnlockFlag(obj)
+            flag = obj.queryNum('LIAS?3');
+        end
+        function flag = getOutRangeFlag(obj)
+            flag = obj.queryNum('LIAS?4');
+        end
+        function flag = getIndirectTCFlag(obj)
+            flag = obj.queryNum('LIAS?5');
+        end
+        function flag = getTriggerFlag(obj)
+            flag = obj.queryNum('LIAS?6');
+        end
+
+
+
         function disconnect(obj)
             if ~isempty(obj.device) && isvalid(obj.device)
                 fclose(obj.device);
