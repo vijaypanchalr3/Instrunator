@@ -4,13 +4,13 @@ classdef testlockin < handle
     end
     
     properties (Constant)
-        % Allowed values for sensitivity, time constant, etc.
         SENSITIVITY_VALUES = 0:26;  % Valid sensitivity levels (0-26)
         TIME_CONSTANT_VALUES = 0:19; % Valid time constants (0-19)
         FILTER_SLOPE_VALUES = [6, 12, 18, 24]; % dB/oct
     end
     
     methods
+
         %% Constructor: Initialize Connection
         function obj = testlockin(gpib_address)
             if nargin < 1
@@ -78,7 +78,16 @@ classdef testlockin < handle
         function P = getP(obj)
             P = rand();
         end
-        
+        function OutputXY = getXY(obj, settleTime)
+            pause(settleTime);
+            X = rand();
+            Y = rand();
+            OutputXY = [X, Y];
+        end
+
+        function voltage = getVoltage(obj)
+            voltage = rand();
+        end
         function [X, Y, R, Theta] = readMeasurements(obj)
             X = rand();
             Y = rand();

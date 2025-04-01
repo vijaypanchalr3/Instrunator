@@ -5,7 +5,7 @@ classdef testSource < handle
     
     methods
         %% Constructor: Initialize Connection
-        function obj = test(gpib_address)
+        function obj = testSource(gpib_address)
             if nargin < 1
                 gpib_address = 24; % Default GPIB address
             end
