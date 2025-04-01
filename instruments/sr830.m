@@ -147,6 +147,12 @@ classdef sr830 < handle
             Y = obj.queryNum('OUTP? 2');
         end
 
+        function [X, Y] = getXY(obj, settleTime)
+            pause(settleTime);
+            X = obj.queryNum('OUTP? 1');
+            Y = obj.queryNum('OUTP? 2');
+        end
+
         function R = getR(obj)
             R = obj.queryNum('OUTP? 3');
             % outR = str2double(R);
@@ -177,6 +183,9 @@ classdef sr830 < handle
             % command = append('AUXV 1, ', num2str(voltage));
             obj.send(sprintf('AUXV 1, %.4f', voltage));
         end
+        function voltage = getVoltage(obj)
+            voltage = obj.queryNum('AUXV? 1');
+        end
         function setAux2(obj, voltage)
             if voltage < -10.500 || voltage > 10.500
                 error("Voltage from AUX2 must be between -10.500 to 10.500");
@@ -198,6 +207,12 @@ classdef sr830 < handle
             % command = append('AUXV 4, ', num2str(voltage));
             obj.send(sprintf('AUXV 4, %.4f', voltage));
         end
+        function getFlags(obj)
+            % Get the status of the flags
+            flags = obj.query('*CLS');
+            % Display the flags
+            fprintf('Flags: %s\n', flags);
+        end
         function disconnect(obj)
             if ~isempty(obj.device) && isvalid(obj.device)
                 fclose(obj.device);
@@ -208,5 +223,6 @@ classdef sr830 < handle
             clear lockin;
             fprintf('GPIB connection closed.\n');
         end
+
     end
 end

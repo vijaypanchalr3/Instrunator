@@ -69,7 +69,13 @@ classdef keithley2400 < handle
         end
 
         function out = getVoltage(obj)
-            out = obj.query(':MEAS:CURR?');
+            out = obj.readAll();
+            out = out(1);
+        end
+
+        function out = getLeakage(obj)
+            out = obj.readAll();
+            out = out(2);
         end
 
         function out = getCurrent(obj)
