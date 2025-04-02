@@ -100,6 +100,13 @@ classdef sr830 < handle
             end
             obj.send(sprintf("SENS %d", level));
         end
+        
+        function getSensitivity(obj)
+            sensitivity = obj.queryNum('SENS?');
+            if sensitivity < 0 || sensitivity > 26
+                error("Invalid sensitivity level.");
+            end
+        end
 
         function setTimeConstant(obj, timeConst)
             if ~ismember(timeConst, obj.TIME_CONSTANT_VALUES)
@@ -238,7 +245,17 @@ classdef sr830 < handle
             flag = obj.queryNum('LIAS?6');
         end
 
-
+        function manSens(obj, resistivity)
+        end
+        function autoSens(obj)
+            flag = obj.getInputOverloadFlag(); % For clear the flags
+            flag = obj.getInputOverloadFlag();
+            while flag
+                % disp('Input overload detected. Adjusting sensitivity...');
+                obj.setSensitivity(obj.getSensitivity() + 1);
+                flag = obj.getInputOverloadFlag();
+            end
+        end
 
         function disconnect(obj)
             if ~isempty(obj.device) && isvalid(obj.device)
