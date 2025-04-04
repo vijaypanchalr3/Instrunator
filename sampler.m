@@ -20,7 +20,7 @@ classdef sampler < handle
     
     methods
         %% Constructor: Initialize Sampler
-        function obj = testsampler(lockin, settleTime, rampStep, rampDelay, dataPath)
+        function obj = sampler(lockin, settleTime, rampStep, rampDelay, dataPath)
             arguments
                 lockin
                 settleTime (1,1) double = 0.3 % Default settle time
@@ -243,6 +243,7 @@ classdef sampler < handle
                 obj.rampSource(source1, source1.getVoltage(), v1_init);
                 for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
                     obj.rampSource(source1, v1_init, v1);
+                    obj.lockin.autoSens();
                     v1_init = v1;
                     v2_init = Voltage2(1);
                     [row, col] = ind2sub(size(V1_), index_i);
@@ -250,6 +251,7 @@ classdef sampler < handle
                     obj.rampSource(source2, source2.getVoltage(), v2_init);
                     for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
                         obj.rampSource(source2, v2_init, v2);
+                        obj.lockin.autoSens();
                         v2_init = v2;
         
                         OutputXY = obj.lockin.getXY(obj.settleTime);

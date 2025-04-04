@@ -13,9 +13,10 @@ classdef sr830 < handle
     methods
         %% Constructor: Initialize Connection
         function obj = sr830(gpib_address)
-            if nargin < 1
-                gpib_address = 8; % Default GPIB address
+            arguments
+                gpib_address int8 = 8
             end
+            
             address = append("GPIB0::",num2str(gpib_address),"::INSTR");
             try
                 obj.device = visadev(address);
@@ -101,7 +102,7 @@ classdef sr830 < handle
             obj.send(sprintf("SENS %d", level));
         end
         
-        function getSensitivity(obj)
+        function sensitivity = getSensitivity(obj)
             sensitivity = obj.queryNum('SENS?');
             if sensitivity < 0 || sensitivity > 26
                 error("Invalid sensitivity level.");
@@ -155,10 +156,11 @@ classdef sr830 < handle
             Y = obj.queryNum('OUTP? 2');
         end
 
-        function [X, Y] = getXY(obj, settleTime)
+        function out = getXY(obj, settleTime)
             pause(settleTime);
             X = obj.queryNum('OUTP? 1');
             Y = obj.queryNum('OUTP? 2');
+            out = [X,Y];
         end
 
         function R = getR(obj)
@@ -170,7 +172,8 @@ classdef sr830 < handle
             P = obj.queryNum('OUTP? 4');
         end
         
-        function [X, Y, R, Theta] = readMeasurements(obj)
+        function [X, Y, R, Theta] = readMeasurements(obj, settleTime)
+            pause(settleTime);
             X = obj.queryNum('OUTP? 1');
             Y = obj.queryNum('OUTP? 2');
             R = obj.queryNum('OUTP? 3');
@@ -246,6 +249,7 @@ classdef sr830 < handle
         end
 
         function manSens(obj, resistivity)
+            %pass
         end
         function autoSens(obj)
             flag = obj.getInputOverloadFlag(); % For clear the flags
