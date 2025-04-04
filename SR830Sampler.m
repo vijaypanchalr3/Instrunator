@@ -29,7 +29,7 @@ classdef SR830Sampler < handle
             obj.data.Y = [];
 
             % Setup plotting
-            obj.initPlot();
+            % obj.initPlot();
         end
         
         %% Start Sampling & Plotting
@@ -147,7 +147,7 @@ classdef SR830Sampler < handle
             data = obj.data;
             fprintf("Sampling complete.\n");
         end
-
+        
         function data = startovernegstart(obj, keithley, Voltage, filename)
             obj.isRunning = true;
                        
