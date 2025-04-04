@@ -15,7 +15,6 @@ classdef testsampler < handle
         fig            % Figure for plotting
         ax             % Axes for plotting
         lines          % Animated lines
-        Z
         contourPlot
     end
     
@@ -63,7 +62,7 @@ classdef testsampler < handle
                 obj.data.Y(end+1) = OutputXY(2);
                 
                 
-                obj.updatePlot(cur, funcY(OutputXY(1), OutputXY(2)));
+                obj.updatePlotSingle(cur, funcY(OutputXY(1), OutputXY(2)));
             end
         end
 
@@ -200,13 +199,12 @@ classdef testsampler < handle
             legend(obj.ax, 'show');
             grid(obj.ax, 'on');
         end
-
-
-
-
-
-
-
+        
+        
+        function updatePlotSingle(obj, x, y)
+            addpoints(obj.lines, x, y);
+            drawnow;
+        end
 
         function data = doubleSource(obj, source1, source2, Voltage1, Voltage2, options, functions)
             arguments
@@ -228,8 +226,14 @@ classdef testsampler < handle
             obj.data.sourceVoltage2 = [];
             obj.data.X = [];
             obj.data.Y = [];
-
+            v1_ = Voltage1(1):Voltage1(3):Voltage1(2);
+            v2_ = Voltage2(1):Voltage2(3):Voltage2(2);
             
+            [V1_, V2_] = meshgrid(v1_, v2_);
+            index_i=1;
+            index_j=1;
+            Z = nan(size(V1_));
+            obj.initPlotDouble();
 
             if options.type==1
                 % pass
@@ -239,19 +243,35 @@ classdef testsampler < handle
                 for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
                     obj.rampSource(source1, v1_init, v1);
                     v1_init = v1;
-
                     v2_init = Voltage2(1);
+                    [row, col] = ind2sub(size(V1_), index_i);
+                    index_i = index_i+1;
                     obj.rampSource(source2, source2.getVoltage(), v2_init);
                     for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
                         obj.rampSource(source2, v2_init, v2);
                         v2_init = v2;
         
                         OutputXY = obj.lockin.getXY(obj.settleTime);
+                        Z(row,index_j) = OutputXY(1);
+                        index_j = index_j+1;
                         obj.data.sourceVoltage1(end+1) = v1;
                         obj.data.sourceVoltage2(end+1) = v2;
                         obj.data.X(end+1) = OutputXY(1);
                         obj.data.Y(end+1) = OutputXY(2);
                         fprintf("Voltage1: %.2f, Voltage2: %.2f\n", v1, v2);
+                    end
+                    index_j = 1;
+                    if sum(~isnan(Z(:))) >= 4
+                        % If an existing contour plot exists and is valid, delete it
+                        if ~isempty(obj.contourPlot)
+                            if all(isgraphics(obj.contourPlot(:)))
+                                delete(obj.contourPlot);
+                            end
+                        end
+                        
+                        % Update contour plot with the new data matrix.
+                        % Note: Even if many values are still NaN, contourf will plot based on available data.
+                        obj.contourPlot = contourf(V1_, V2_, Z, 20, 'LineColor', 'none');
                     end
                 end
             end
@@ -269,8 +289,21 @@ classdef testsampler < handle
 
         end
 
+        function initPlotDouble(obj)
+            obj.fig = figure('Name', 'SR830 Data Logger', 'NumberTitle', 'off');
+            hold on;
+            colormap parula;
+            colorbar;
+            title('SR830 Data Logger');
+            xlabel('V1');
+            ylabel('V2');
+            obj.contourPlot = [];
+        end
 
-
+        function updatePlotDouble(obj, x, y)
+            addpoints(obj.lines, x, y);
+            drawnow;
+        end
 
 
         %% Stop Sampling
@@ -288,10 +321,6 @@ classdef testsampler < handle
         
 
         %% Update Live Plot
-        function updatePlot(obj, x, y)
-            addpoints(obj.lines, x, y);
-            drawnow;
-        end
         
         %% Destructor: Cleanup
         function delete(obj)
