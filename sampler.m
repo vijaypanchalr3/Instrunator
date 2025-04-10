@@ -216,6 +216,8 @@ classdef sampler < handle
                 Voltage2 (1,3) double
                 options.type (1,1) int8 = 0
                 options.filename (1,:) string = ""
+                options.onlyX (1,1) logical = true
+                options.takeR (1,1) logical = true
                 functions.functionXY (1,1) function_handle = @obj.identity
                 functions.functionD (1,1) function_handle = @obj.identity
                 functions.functionn (1,1) function_handle = @obj.identity
@@ -227,6 +229,9 @@ classdef sampler < handle
             obj.data.sourceVoltage2 = [];
             obj.data.X = [];
             obj.data.Y = [];
+            if options.takeR
+                obj.data.R = [];
+            end
             v1_ = Voltage1(1):Voltage1(3):Voltage1(2);
             v2_ = Voltage2(1):Voltage2(3):Voltage2(2);
             
@@ -255,12 +260,27 @@ classdef sampler < handle
                         v2_init = v2;
         
                         OutputXY = obj.lockin.getXY(obj.settleTime);
+                        
+                        if options.takeR
+                            Z(row,index_j) = functions.functionXY(OutputXY(1));
+                        else
+                            Z(row,index_j) = OutputXY(1);
+                        end
                         Z(row,index_j) = OutputXY(1);
                         index_j = index_j+1;
                         obj.data.sourceVoltage1(end+1) = v1;
                         obj.data.sourceVoltage2(end+1) = v2;
-                        obj.data.X(end+1) = OutputXY(1);
-                        obj.data.Y(end+1) = OutputXY(2);
+
+                        if options.onlyX
+                            obj.data.X(end+1) = OutputXY(1);
+                        else
+                            obj.data.X(end+1) = OutputXY(1);
+                            obj.data.Y(end+1) = OutputXY(2);
+                        end
+
+                        if options.takeR
+                            obj.data.R(end+1) = functions.functionXY(OutputXY(1));
+                        end
                         fprintf("Voltage1: %.2f, Voltage2: %.2f\n", v1, v2);
                     end
                     index_j = 1;
