@@ -242,7 +242,93 @@ classdef sampler < handle
             obj.initPlotDouble();
 
             if options.type==1
-                % pass
+                v1_init = Voltage1(1);
+                obj.rampSource(source1, source1.getVoltage(), v1_init);
+                iteration = 0;
+                for v1 = Voltage1(1):Voltage1(3):Voltage1(2)
+                    obj.rampSource(source1, v1_init, v1);
+                    obj.lockin.autoSens();
+                    v1_init = v1;
+                    v2_init = Voltage2(1);
+                    [row, col] = ind2sub(size(V1_), index_i);
+                    index_i = index_i+1;
+                    obj.rampSource(source2, source2.getVoltage(), v2_init);
+                    if rem(iteration, 2) == 0
+                        for v2 = Voltage2(1):Voltage2(3):Voltage2(2)
+                            obj.rampSource(source2, v2_init, v2);
+                            obj.lockin.autoSens();
+                            v2_init = v2;
+            
+                            OutputXY = obj.lockin.getXY(obj.settleTime);
+                            
+                            if options.takeR
+                                Z(row,index_j) = functions.functionXY(OutputXY(1));
+                            else
+                                Z(row,index_j) = OutputXY(1);
+                            end
+                            Z(row,index_j) = OutputXY(1);
+                            index_j = index_j+1;
+                            obj.data.sourceVoltage1(end+1) = v1;
+                            obj.data.sourceVoltage2(end+1) = v2;
+
+                            if options.onlyX
+                                obj.data.X(end+1) = OutputXY(1);
+                            else
+                                obj.data.X(end+1) = OutputXY(1);
+                                obj.data.Y(end+1) = OutputXY(2);
+                            end
+
+                            if options.takeR
+                                obj.data.R(end+1) = functions.functionXY(OutputXY(1));
+                            end
+                            fprintf("Voltage1: %.2f, Voltage2: %.2f\n", v1, v2);
+                        end
+                    else
+                        for v2 = Voltage2(2):-Voltage2(3):Voltage2(1)
+                            obj.rampSource(source2, v2_init, v2);
+                            obj.lockin.autoSens();
+                            v2_init = v2;
+            
+                            OutputXY = obj.lockin.getXY(obj.settleTime);
+                            
+                            if options.takeR
+                                Z(row,index_j) = functions.functionXY(OutputXY(1));
+                            else
+                                Z(row,index_j) = OutputXY(1);
+                            end
+                            Z(row,index_j) = OutputXY(1);
+                            index_j = index_j+1;
+                            obj.data.sourceVoltage1(end+1) = v1;
+                            obj.data.sourceVoltage2(end+1) = v2;
+
+                            if options.onlyX
+                                obj.data.X(end+1) = OutputXY(1);
+                            else
+                                obj.data.X(end+1) = OutputXY(1);
+                                obj.data.Y(end+1) = OutputXY(2);
+                            end
+
+                            if options.takeR
+                                obj.data.R(end+1) = functions.functionXY(OutputXY(1));
+                            end
+                            fprintf("Voltage1: %.2f, Voltage2: %.2f\n", v1, v2);
+                        end
+                    end
+                    iteration = iteration + 1;
+                    index_j = 1;
+                    if sum(~isnan(Z(:))) >= 4
+                        % If an existing contour plot exists and is valid, delete it
+                        if ~isempty(obj.contourPlot)
+                            if all(isgraphics(obj.contourPlot(:)))
+                                delete(obj.contourPlot);
+                            end
+                        end
+                        
+                        % Update contour plot with the new data matrix.
+                        % Note: Even if many values are still NaN, contourf will plot based on available data.
+                        obj.contourPlot = contourf(V1_, V2_, Z, 20, 'LineColor', 'none');
+                    end
+                end
             elseif options.type==0 || nargin<5 % Default
                 v1_init = Voltage1(1);
                 obj.rampSource(source1, source1.getVoltage(), v1_init);
