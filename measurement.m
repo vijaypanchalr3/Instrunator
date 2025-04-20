@@ -5,8 +5,8 @@ classdef measurement < handle
 
     methods
         function obj = measurement(
-            
+
         end
     end
 
-end
+end        function testHelloWorld(testCase)
