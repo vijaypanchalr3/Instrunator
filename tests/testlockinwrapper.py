@@ -59,21 +59,26 @@ class testlockinwrapper:
     def getX(self):
         X = self.eng.rand()
         return X
+    
     def getY(self):
         Y = self.eng.rand()
         return Y
+    
     def getR(self):
         R = self.eng.rand()
         return R
+    
     def getP(self):
         P = self.eng.rand()
         return P
+    
     def getXY(self, settleTime):
         self.eng.pause(settleTime)
         X = self.eng.rand()
         Y = self.eng.rand()
         OutputXY = [X, Y]
         return OutputXY
+    
     def getVoltage(self):
         voltage = self.eng.rand()
         return voltage
