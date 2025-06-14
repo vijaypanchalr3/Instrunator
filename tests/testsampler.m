@@ -49,6 +49,11 @@ classdef testsampler < handle
                 end_value (1,1) double
                 funcY (1,1) function_handle = @obj.identity
             end
+            if ~isstruct(obj.data) || ~isfield(obj.data, 'sourceVoltage')
+                obj.data.sourceVoltage = [];
+                obj.data.X = [];
+                obj.data.Y = [];
+            end
             obj.rampSource(source, source.getVoltage(), initial_value);
 
             init = initial_value;
@@ -62,7 +67,7 @@ classdef testsampler < handle
                 obj.data.Y(end+1) = OutputXY(2);
                 
                 
-                obj.updatePlotSingle(cur, funcY(OutputXY(1), OutputXY(2)));
+                % obj.updatePlotSingle(cur, funcY(OutputXY(1), OutputXY(2)));
             end
         end
 
@@ -146,7 +151,7 @@ classdef testsampler < handle
             obj.data.Y = [];
 
             % init plot
-            obj.initPLotSingle();
+            % obj.initPLotSingle();
 
 
             if type==3

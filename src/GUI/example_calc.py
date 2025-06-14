@@ -127,8 +127,6 @@ class MathOperationDataModel(NodeDataModel):
         data : NodeData
         port_index : int
         '''
-        print(port)
-        print(type(port))
         if port.index == 0:
             self._number1 = data
         elif port.index == 1:

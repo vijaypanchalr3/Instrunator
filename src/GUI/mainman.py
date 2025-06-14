@@ -5,7 +5,7 @@ from PyQt6.QtGui import QAction
 
 from sideman import Sidebar
 from nodeman import NodeMan
-from theme import apply_system_theme
+# from theme import apply_system_theme
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -13,7 +13,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Instrunator")
         self.setGeometry(100, 100, 1200, 800)
 
-        apply_system_theme()
+        # apply_system_theme()
 
         # --- Toolbar ---
         toolbar = QToolBar("Tools")
